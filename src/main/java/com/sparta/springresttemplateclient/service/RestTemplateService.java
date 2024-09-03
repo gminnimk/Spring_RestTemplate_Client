@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -123,16 +124,37 @@ public class RestTemplateService {
     }
 
     /**
-     * ✅ 외부 API에 HTTP Exchange (POST/GET 등) 요청을 보내고, 객체 리스트(List<ItemDto>)를 반환합니다.
+     * ✅ 외부 API에 HTTP 요청(POST/GET 등)을 보내고, 객체 리스트(List<ItemDto>)를 반환합니다.
      *
-     *    ➡️ 이 메서드는 주로 인증이 필요한 요청에서 사용됩니다.
+     *    ➡️ 이 메서드는 주로 인증이 필요한 요청에서 사용됩니다. 요청 헤더에 인증 토큰을 포함하여, 외부 API에 데이터를 전송하고 응답을 처리합니다.
      *
-     * @param token 인증 토큰으로, 요청 시 Authorization 헤더에 포함되어 전송됩니다.
+     * @param token 인증 토큰으로, 요청 시 `X-Authorization` 헤더에 포함되어 전송됩니다.
      * @return List<ItemDto> 외부 API로부터 받은 여러 항목의 데이터를 담은 리스트입니다.
      */
     public List<ItemDto> exchangeCall(String token) {
-        // 인증이 필요한 POST/GET 요청을 보내는 로직이 들어갈 자리입니다.
-        return null;
+        // 요청 URL 만들기
+        URI uri = UriComponentsBuilder
+            .fromUriString("http://localhost:7070")
+            .path("/api/server/exchange-call")
+            .encode()
+            .build()
+            .toUri();
+        log.info("uri = " + uri);
+
+        // 요청 본문에 포함할 사용자 데이터
+        User user = new User("Robbie", "1234");
+
+        // POST 요청을 생성하고 인증 토큰을 헤더에 추가
+        RequestEntity<User> requestEntity = RequestEntity
+            .post(uri)
+            .header("X-Authorization", token)
+            .body(user);
+
+        // 외부 API에 요청을 보내고 응답을 String 형식으로 받음
+        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
+
+        // JSON 응답을 ItemDto 리스트로 변환하여 반환
+        return fromJSONtoItems(responseEntity.getBody());
     }
 
     /**
