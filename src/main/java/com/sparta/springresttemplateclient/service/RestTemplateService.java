@@ -1,6 +1,7 @@
 package com.sparta.springresttemplateclient.service;
 
 import com.sparta.springresttemplateclient.dto.ItemDto;
+import com.sparta.springresttemplateclient.entity.User;
 import java.net.URI;
 import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
@@ -93,14 +94,32 @@ public class RestTemplateService {
     /**
      * ✅ 외부 API에 POST 요청을 보내고, 단일 객체(ItemDto)를 반환합니다.
      *
-     *    ➡️ 외부 API에 데이터를 생성하거나 등록할 때 사용됩니다.
+     *    ➡️ 외부 API에 데이터를 전송하여 새 항목을 생성하거나 등록합니다. 요청 본문에는 사용자 정보가 포함됩니다.
      *
-     * @param query 외부 API 호출 시 사용되는 데이터 또는 요청 본문입니다.
+     * @param query 외부 API 호출 시 URL 경로에 포함되는 쿼리 파라미터입니다.
      * @return ItemDto 외부 API로부터 받은 생성된 항목의 데이터를 담은 객체입니다.
      */
     public ItemDto postCall(String query) {
-        // POST 요청을 보내고 응답을 처리하는 로직이 들어갈 자리입니다.
-        return null;
+        // 요청 URL 만들기
+        URI uri = UriComponentsBuilder
+            .fromUriString("http://localhost:7070")
+            .path("/api/server/post-call/{query}")
+            .encode()
+            .build()
+            .expand(query)
+            .toUri();
+        log.info("uri = " + uri);
+
+        // 요청 본문에 포함할 사용자 데이터
+        User user = new User("Robbie", "1234");
+
+        // POST 요청을 보내고 응답을 ItemDto 형태로 반환
+        ResponseEntity<ItemDto> responseEntity = restTemplate.postForEntity(uri, user, ItemDto.class);
+
+        log.info("statusCode = " + responseEntity.getStatusCode());
+
+        // 응답 본문에서 ItemDto 객체 반환
+        return responseEntity.getBody();
     }
 
     /**
